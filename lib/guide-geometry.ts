@@ -64,8 +64,8 @@ export function computeObliqueSpacingMm(bodyHeightMm: number): number {
 /** Marge uniforme haut/gauche/droite de la page imprimée. */
 export const PAGE_MARGIN_MM = 10;
 
-/** Hauteur réservée en bas de page pour le cartouche de légende. */
-export const LEGEND_BLOCK_HEIGHT_MM = 24;
+/** Hauteur réservée en bas de page pour le cartouche de légende (0 = pied de page supprimé, test en cours). */
+export const LEGEND_BLOCK_HEIGHT_MM = 0;
 
 /** Largeur d'écriture arbitraire utilisée pour l'aperçu d'une bande isolée. */
 export const PREVIEW_WRITING_WIDTH_MM = 120;

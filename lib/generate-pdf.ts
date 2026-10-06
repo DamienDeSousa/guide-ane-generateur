@@ -1,6 +1,5 @@
 import {
   computePageLayout,
-  PAGE_MARGIN_MM,
   type Orientation,
   type PageFormat,
 } from "@/lib/guide-geometry";
@@ -80,23 +79,6 @@ export async function downloadGuidePdf(params: {
     doc.line(band.writingLeft, band.bottom, band.writingRight, band.bottom);
     doc.setLineWidth(0.1);
   }
-
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.1);
-  doc.line(
-    PAGE_MARGIN_MM,
-    layout.legend.separatorY,
-    layout.pageWidthMm - PAGE_MARGIN_MM,
-    layout.legend.separatorY,
-  );
-
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(9);
-  doc.text(layout.legend.text, PAGE_MARGIN_MM, layout.legend.textY);
-
-  doc.setFontSize(7);
-  doc.setTextColor(140, 140, 140);
-  doc.text(layout.legend.credit, PAGE_MARGIN_MM, layout.legend.creditY);
 
   doc.save(buildFileName(bodyHeightMm, orientation, format));
 }
