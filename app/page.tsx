@@ -6,6 +6,8 @@ import GuideBandPreview from "@/components/GuideBandPreview";
 import {
   BODY_HEIGHT_DEFAULT_MM,
   clampBodyHeightMm,
+  clampLeadingMm,
+  computeDefaultLeadingMm,
   computePageLayout,
   type Orientation,
   type PageFormat,
@@ -16,6 +18,8 @@ export default function Home() {
   const [bodyHeightMmRaw, setBodyHeightMmRaw] = useState<number>(
     BODY_HEIGHT_DEFAULT_MM,
   );
+  // null = l'interligne suit la hauteur de corps (valeur par défaut).
+  const [leadingMmRaw, setLeadingMmRaw] = useState<number | null>(null);
   const [format, setFormat] = useState<PageFormat>("a4");
   const [orientation, setOrientation] = useState<Orientation>("portrait");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,15 +31,25 @@ export default function Home() {
     [bodyHeightMmRaw],
   );
 
+  const leadingMm = useMemo(
+    () =>
+      leadingMmRaw === null
+        ? computeDefaultLeadingMm(bodyHeightMm)
+        : clampLeadingMm(leadingMmRaw, bodyHeightMm),
+    [leadingMmRaw, bodyHeightMm],
+  );
+
   const bandCount = useMemo(
-    () => computePageLayout(bodyHeightMm, orientation, format).bands.length,
-    [bodyHeightMm, orientation, format],
+    () =>
+      computePageLayout(bodyHeightMm, leadingMm, orientation, format).bands
+        .length,
+    [bodyHeightMm, leadingMm, orientation, format],
   );
 
   async function handleDownload() {
     setIsGenerating(true);
     try {
-      await downloadGuidePdf({ bodyHeightMm, orientation, format });
+      await downloadGuidePdf({ bodyHeightMm, leadingMm, orientation, format });
     } finally {
       setIsGenerating(false);
     }
@@ -59,6 +73,8 @@ export default function Home() {
           <GuideForm
             bodyHeightMmRaw={bodyHeightMmRaw}
             onBodyHeightMmChange={setBodyHeightMmRaw}
+            leadingMmRaw={leadingMmRaw ?? leadingMm}
+            onLeadingMmChange={setLeadingMmRaw}
             format={format}
             onFormatChange={setFormat}
             orientation={orientation}

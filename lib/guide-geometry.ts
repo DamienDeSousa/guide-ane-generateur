@@ -26,10 +26,14 @@ export const BODY_HEIGHT_MIN_MM = 2;
 export const BODY_HEIGHT_MAX_MM = 20;
 export const BODY_HEIGHT_STEP_MM = 0.5;
 
+export const LEADING_MIN_MM = 0;
+export const LEADING_MAX_MM = 40;
+export const LEADING_STEP_MM = 0.5;
+
 /** Ratios fixes dérivant tous les autres paramètres de la hauteur de corps. */
 export const RATIO_ASCENDER = 1; // hampes & hastes = 1 × corps
 export const RATIO_DESCENDER = 1.5; // jambages = 1 corps 1/2
-export const RATIO_LEADING = 1; // interligne = 1 × corps
+export const RATIO_LEADING = 1; // interligne par défaut = 1 × corps
 
 /**
  * Demi-corps supplémentaire au-dessus de la ligne des hampes & hastes (zone de
@@ -96,6 +100,7 @@ export interface GuideLayout {
   orientation: Orientation;
   format: PageFormat;
   bodyHeightMm: number;
+  leadingMm: number;
   pageWidthMm: number;
   pageHeightMm: number;
   writingLeftMm: number;
@@ -115,6 +120,17 @@ export interface GuideLayout {
 export function clampBodyHeightMm(value: number): number {
   if (!Number.isFinite(value)) return BODY_HEIGHT_DEFAULT_MM;
   return Math.min(BODY_HEIGHT_MAX_MM, Math.max(BODY_HEIGHT_MIN_MM, value));
+}
+
+/** Interligne par défaut, dérivé de la hauteur de corps. */
+export function computeDefaultLeadingMm(bodyHeightMm: number): number {
+  return RATIO_LEADING * bodyHeightMm;
+}
+
+/** Garantit un interligne numérique valide ; NaN retombe sur la valeur par défaut. */
+export function clampLeadingMm(value: number, bodyHeightMm: number): number {
+  if (!Number.isFinite(value)) return computeDefaultLeadingMm(bodyHeightMm);
+  return Math.min(LEADING_MAX_MM, Math.max(LEADING_MIN_MM, value));
 }
 
 /** Hauteur totale d'une bande = débordement + hampes/hastes + corps + jambages. */
@@ -244,17 +260,21 @@ function formatMm(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-export function formatLegendText(bodyHeightMm: number): string {
+export function formatLegendText(
+  bodyHeightMm: number,
+  leadingMm: number,
+): string {
   return (
     `ANGLAISE – Hauteur de corps : ${formatMm(bodyHeightMm)} mm – ` +
     `jambages : 1 corps 1/2 – hampes & hastes : 1 corps – ` +
-    `interligne : 1 corps – pente : ${SLANT_ANGLE_FROM_HORIZONTAL_DEG}°`
+    `interligne : ${formatMm(leadingMm)} mm – pente : ${SLANT_ANGLE_FROM_HORIZONTAL_DEG}°`
   );
 }
 
 /** Calcule la mise en page complète d'une page : bandes + légende. */
 export function computePageLayout(
   bodyHeightMm: number,
+  leadingMm: number,
   orientation: Orientation,
   format: PageFormat = "a4",
 ): GuideLayout {
@@ -267,7 +287,7 @@ export function computePageLayout(
   const writingWidthMm = writingRightMm - writingLeftMm;
 
   const bandHeight = computeBandHeightMm(bodyHeightMm);
-  const leading = RATIO_LEADING * bodyHeightMm;
+  const leading = leadingMm;
   const avail = pageHeightMm - 2 * PAGE_MARGIN_MM - LEGEND_BLOCK_HEIGHT_MM;
   const bandCount = Math.max(
     1,
@@ -288,6 +308,7 @@ export function computePageLayout(
     orientation,
     format,
     bodyHeightMm,
+    leadingMm,
     pageWidthMm,
     pageHeightMm,
     writingLeftMm,
@@ -298,7 +319,7 @@ export function computePageLayout(
       separatorY: legendZoneTop + 4,
       textY: legendZoneTop + 13,
       creditY: legendZoneTop + 19,
-      text: formatLegendText(bodyHeightMm),
+      text: formatLegendText(bodyHeightMm, leadingMm),
       credit: "Généré avec Guide-Âne Générateur",
     },
   };

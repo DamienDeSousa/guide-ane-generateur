@@ -2,6 +2,9 @@ import {
   BODY_HEIGHT_MAX_MM,
   BODY_HEIGHT_MIN_MM,
   BODY_HEIGHT_STEP_MM,
+  LEADING_MAX_MM,
+  LEADING_MIN_MM,
+  LEADING_STEP_MM,
   PAGE_FORMATS,
   type Orientation,
   type PageFormat,
@@ -12,6 +15,8 @@ const FORMAT_ORDER: PageFormat[] = ["a6", "a5", "a4"];
 interface GuideFormProps {
   bodyHeightMmRaw: number;
   onBodyHeightMmChange: (value: number) => void;
+  leadingMmRaw: number;
+  onLeadingMmChange: (value: number) => void;
   format: PageFormat;
   onFormatChange: (value: PageFormat) => void;
   orientation: Orientation;
@@ -24,6 +29,8 @@ interface GuideFormProps {
 export default function GuideForm({
   bodyHeightMmRaw,
   onBodyHeightMmChange,
+  leadingMmRaw,
+  onLeadingMmChange,
   format,
   onFormatChange,
   orientation,
@@ -53,8 +60,30 @@ export default function GuideForm({
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           Les autres réglages sont dérivés automatiquement : jambages = 1,5×,
-          hampes &amp; hastes = 1×, interligne = 1× la hauteur de corps, pente
-          fixe à 54°.
+          hampes &amp; hastes = 1×, pente fixe à 54°.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label
+          htmlFor="leading"
+          className="text-sm font-medium text-zinc-900 dark:text-zinc-50"
+        >
+          Interligne (mm)
+        </label>
+        <input
+          id="leading"
+          type="number"
+          min={LEADING_MIN_MM}
+          max={LEADING_MAX_MM}
+          step={LEADING_STEP_MM}
+          value={Number.isNaN(leadingMmRaw) ? "" : leadingMmRaw}
+          onChange={(e) => onLeadingMmChange(e.target.valueAsNumber)}
+          className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+        />
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          Par défaut, identique à la hauteur de corps tant qu&apos;elle n&apos;est
+          pas modifiée (un champ vide équivaut à cette valeur).
         </p>
       </div>
 

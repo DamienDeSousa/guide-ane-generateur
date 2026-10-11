@@ -10,10 +10,11 @@ function formatMm(value: number): string {
 
 function buildFileName(
   bodyHeightMm: number,
+  leadingMm: number,
   orientation: Orientation,
   format: PageFormat,
 ): string {
-  return `guide-ane-anglaise-${formatMm(bodyHeightMm)}mm-${format}-${orientation}.pdf`;
+  return `guide-ane-anglaise-${formatMm(bodyHeightMm)}mm-interligne${formatMm(leadingMm)}mm-${format}-${orientation}.pdf`;
 }
 
 /**
@@ -23,13 +24,14 @@ function buildFileName(
  */
 export async function downloadGuidePdf(params: {
   bodyHeightMm: number;
+  leadingMm: number;
   orientation: Orientation;
   format: PageFormat;
 }): Promise<void> {
-  const { bodyHeightMm, orientation, format } = params;
+  const { bodyHeightMm, leadingMm, orientation, format } = params;
   const { jsPDF } = await import("jspdf");
 
-  const layout = computePageLayout(bodyHeightMm, orientation, format);
+  const layout = computePageLayout(bodyHeightMm, leadingMm, orientation, format);
   const doc = new jsPDF({ unit: "mm", format, orientation });
 
   doc.setDrawColor(120, 120, 120);
@@ -80,5 +82,5 @@ export async function downloadGuidePdf(params: {
     doc.setLineWidth(0.1);
   }
 
-  doc.save(buildFileName(bodyHeightMm, orientation, format));
+  doc.save(buildFileName(bodyHeightMm, leadingMm, orientation, format));
 }
