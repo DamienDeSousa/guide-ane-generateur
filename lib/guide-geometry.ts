@@ -30,10 +30,40 @@ export const LEADING_MIN_MM = 0;
 export const LEADING_MAX_MM = 40;
 export const LEADING_STEP_MM = 0.5;
 
-/** Ratios fixes dérivant tous les autres paramètres de la hauteur de corps. */
-export const RATIO_ASCENDER = 1; // hampes & hastes = 1 × corps
-export const RATIO_DESCENDER = 1.5; // jambages = 1 corps 1/2
+/** Ratio dérivant l'interligne par défaut de la hauteur de corps. */
 export const RATIO_LEADING = 1; // interligne par défaut = 1 × corps
+
+/**
+ * Coefficient des zones haute (débordement + hampes & hastes) et basse
+ * (jambages), en multiples du corps. Il augmente quand le corps diminue :
+ * 1,5 × corps à 10 mm, 2 × corps à 3 mm, interpolé linéairement entre les deux
+ * et plafonné au-delà.
+ */
+export const EXTENSION_RATIO_AT_LARGE_BODY = 1.5;
+export const EXTENSION_RATIO_AT_SMALL_BODY = 2;
+export const EXTENSION_LARGE_BODY_MM = 10;
+export const EXTENSION_SMALL_BODY_MM = 3;
+
+export function computeExtensionRatio(bodyHeightMm: number): number {
+  const t =
+    (EXTENSION_LARGE_BODY_MM - bodyHeightMm) /
+    (EXTENSION_LARGE_BODY_MM - EXTENSION_SMALL_BODY_MM);
+  const clamped = Math.min(1, Math.max(0, t));
+  return (
+    EXTENSION_RATIO_AT_LARGE_BODY +
+    clamped * (EXTENSION_RATIO_AT_SMALL_BODY - EXTENSION_RATIO_AT_LARGE_BODY)
+  );
+}
+
+/** Hampes & hastes = zone haute moins le demi-corps de débordement. */
+export function computeAscenderRatio(bodyHeightMm: number): number {
+  return computeExtensionRatio(bodyHeightMm) - RATIO_OVERSHOOT_TOP;
+}
+
+/** Jambages = même coefficient que la zone haute. */
+export function computeDescenderRatio(bodyHeightMm: number): number {
+  return computeExtensionRatio(bodyHeightMm);
+}
 
 /**
  * Demi-corps supplémentaire au-dessus de la ligne des hampes & hastes (zone de
@@ -43,12 +73,12 @@ export const RATIO_LEADING = 1; // interligne par défaut = 1 × corps
 export const RATIO_OVERSHOOT_TOP = 0.5;
 
 /**
- * Position, à l'intérieur de la zone des jambages, de la barre horizontale qui
- * en isole le dernier demi-corps (mesurée depuis la ligne de base). Avec
- * RATIO_DESCENDER = 1,5, cette barre laisse 1 corps plein puis un dernier
- * demi-corps jusqu'à la limite des jambages — confirmé par la même mesure.
+ * Taille du dernier segment de la zone des jambages, isolé par une barre
+ * horizontale : un demi-corps, comme pour la zone de débordement en haut.
+ * À 10 mm (jambages 1,5 corps), la barre tombe à 1 corps de la ligne de base
+ * — confirmé par mesure sur le PDF de référence.
  */
-export const RATIO_DESCENDER_SPLIT = 1;
+export const RATIO_DESCENDER_LAST_SEGMENT = 0.5;
 
 /**
  * Pente fixe, mesurée depuis l'HORIZONTALE (convention calligraphique standard
@@ -136,7 +166,8 @@ export function clampLeadingMm(value: number, bodyHeightMm: number): number {
 /** Hauteur totale d'une bande = débordement + hampes/hastes + corps + jambages. */
 export function computeBandHeightMm(bodyHeightMm: number): number {
   return (
-    (RATIO_OVERSHOOT_TOP + RATIO_ASCENDER + 1 + RATIO_DESCENDER) * bodyHeightMm
+    (computeExtensionRatio(bodyHeightMm) + 1 + computeDescenderRatio(bodyHeightMm)) *
+    bodyHeightMm
   );
 }
 
@@ -213,9 +244,12 @@ export function computeBandGeometry(
 
   const top = originY;
   const ascenderTop = top + RATIO_OVERSHOOT_TOP * bodyHeightMm;
-  const ascenderBottom = ascenderTop + RATIO_ASCENDER * bodyHeightMm;
+  const ascenderBottom = ascenderTop + computeAscenderRatio(bodyHeightMm) * bodyHeightMm;
   const bodyBottom = ascenderBottom + bodyHeightMm;
-  const descenderMid = bodyBottom + RATIO_DESCENDER_SPLIT * bodyHeightMm;
+  const descenderMid =
+    bodyBottom +
+    (computeDescenderRatio(bodyHeightMm) - RATIO_DESCENDER_LAST_SEGMENT) *
+      bodyHeightMm;
   const bottom = originY + bandHeight;
 
   const writingLeft = originX;
@@ -260,13 +294,18 @@ function formatMm(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
+function formatRatio(value: number): string {
+  return value.toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
+}
+
 export function formatLegendText(
   bodyHeightMm: number,
   leadingMm: number,
 ): string {
   return (
     `ANGLAISE – Hauteur de corps : ${formatMm(bodyHeightMm)} mm – ` +
-    `jambages : 1 corps 1/2 – hampes & hastes : 1 corps – ` +
+    `jambages : ${formatRatio(computeDescenderRatio(bodyHeightMm))} corps – ` +
+    `hampes & hastes : ${formatRatio(computeAscenderRatio(bodyHeightMm))} corps – ` +
     `interligne : ${formatMm(leadingMm)} mm – pente : ${SLANT_ANGLE_FROM_HORIZONTAL_DEG}°`
   );
 }
