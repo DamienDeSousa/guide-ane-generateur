@@ -6,11 +6,18 @@ import {
   LEADING_MIN_MM,
   LEADING_STEP_MM,
   PAGE_FORMATS,
+  clampBodyHeightMm,
+  computeAscenderRatio,
+  computeDescenderRatio,
   type Orientation,
   type PageFormat,
 } from "@/lib/guide-geometry";
 
 const FORMAT_ORDER: PageFormat[] = ["a6", "a5", "a4"];
+
+function formatRatio(value: number): string {
+  return `${parseFloat(value.toFixed(2)).toString().replace(".", ",")}×`;
+}
 
 interface GuideFormProps {
   bodyHeightMmRaw: number;
@@ -39,6 +46,7 @@ export default function GuideForm({
   isGenerating,
   bandCount,
 }: GuideFormProps) {
+  const bodyHeightMm = clampBodyHeightMm(bodyHeightMmRaw);
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -59,8 +67,10 @@ export default function GuideForm({
           className="w-full rounded border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
         />
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Les autres réglages sont dérivés automatiquement : jambages = 1,5×,
-          hampes &amp; hastes = 1×, pente fixe à 54°.
+          Les autres réglages sont dérivés automatiquement : jambages ={" "}
+          {formatRatio(computeDescenderRatio(bodyHeightMm))}, hampes &amp;
+          hastes = {formatRatio(computeAscenderRatio(bodyHeightMm))} (ces
+          ratios augmentent quand le corps diminue), pente fixe à 54°.
         </p>
       </div>
 
